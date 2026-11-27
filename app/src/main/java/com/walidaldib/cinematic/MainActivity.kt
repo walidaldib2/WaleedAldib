@@ -259,7 +259,7 @@ private fun Studio(context: Context) {
                             Text("وصف اللقطة", color = gold, fontWeight = FontWeight.Bold)
                             OutlinedTextField(value = prompt, onValueChange = { prompt = it }, modifier = Modifier.fillMaxWidth(), minLines = 2, placeholder = { Text("اكتب وصف المشهد أو الحركة المطلوبة") })
                             Text("حركة الكاميرا", color = gold, fontWeight = FontWeight.Bold)
-                            listOf("تقريب سينمائي", "ابتعاد سينمائي", "تحريك أفقي").forEach { choice ->
+                            listOf("تقريب سينمائي", "ابتعاد سينمائي", "تقريب ثم ابتعاد", "تحريك أفقي", "تحريك رأسي").forEach { choice ->
                                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { movement = choice }) {
                                     RadioButton(selected = movement == choice, onClick = { movement = choice }, colors = RadioButtonDefaults.colors(selectedColor = gold))
                                     Text(choice, color = Color.White)
