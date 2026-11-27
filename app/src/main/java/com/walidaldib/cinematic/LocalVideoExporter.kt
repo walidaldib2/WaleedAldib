@@ -35,7 +35,7 @@ object LocalVideoExporter {
         }
         val orientation = runCatching {
             context.contentResolver.openInputStream(source)?.use { ExifInterface(it).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL) }
-        }.getOrDefault(ExifInterface.ORIENTATION_NORMAL)
+        }.getOrNull() ?: ExifInterface.ORIENTATION_NORMAL
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         context.contentResolver.openInputStream(source)?.use { BitmapFactory.decodeStream(it, null, bounds) }
         var sample = 1
