@@ -12,6 +12,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -202,6 +204,16 @@ private fun Studio(context: Context) {
                                     createMode = mode
                                     if (mode != "فيديو") notice = "قسم $mode ظاهر في الواجهة، وسيتم تفعيله عند إضافة محركه."
                                 }, label = { Text(mode, fontSize = 11.sp) })
+                            }
+                        }
+                    }
+                    item {
+                        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            listOf("صورة إلى فيديو", "نص إلى فيديو", "تأثير", "انتقال", "صوت", "كلام", "إعادة تصميم", "تمديد", "شخصية").forEach { tool ->
+                                FilterChip(selected = activeTool == tool, onClick = {
+                                    activeTool = tool
+                                    if (tool != "صورة إلى فيديو") notice = "قسم $tool موجود في واجهة الإنشاء، ويحتاج محركه المتخصص قبل تشغيل التوليد."
+                                }, label = { Text(tool, fontSize = 11.sp) })
                             }
                         }
                     }
