@@ -54,7 +54,8 @@ private fun Studio(context: Context) {
     var image by remember { mutableStateOf(prefs.getString("last_image", null)?.let(Uri::parse)) }
     var prompt by remember { mutableStateOf(prefs.getString("prompt", "") ?: "") }
     var movement by remember { mutableStateOf(prefs.getString("movement", "تقريب سينمائي") ?: "تقريب سينمائي") }
-    var length by remember { mutableIntStateOf(prefs.getInt("length", 5)) }\n    var aspect by remember { mutableStateOf(prefs.getString("aspect", "عمودي 9:16") ?: "عمودي 9:16") }
+    var length by remember { mutableIntStateOf(prefs.getInt("length", 5)) }
+    var aspect by remember { mutableStateOf(prefs.getString("aspect", "عمودي 9:16") ?: "عمودي 9:16") }
     var notice by remember { mutableStateOf("الاستوديو جاهز. اختر صورة للبدء.") }
     var projects by remember { mutableStateOf(readProjects(prefs)) }
     var deleteIndex by remember { mutableStateOf<Int?>(null) }
@@ -154,7 +155,13 @@ private fun Studio(context: Context) {
                                     Text(choice, color = Color.White)
                                 }
                             }
-                            Text("أبعاد الفيديو", color = gold, fontWeight = FontWeight.Bold)\n                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {\n                                listOf("عمودي 9:16", "مربع 1:1", "أفقي 16:9").forEach { ratio ->\n                                    FilterChip(selected = aspect == ratio, onClick = { aspect = ratio }, label = { Text(ratio, fontSize = 11.sp) })\n                                }\n                            }\n                            Text("مدة اللقطة", color = gold, fontWeight = FontWeight.Bold)
+                            Text("أبعاد الفيديو", color = gold, fontWeight = FontWeight.Bold)
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                listOf("عمودي 9:16", "مربع 1:1", "أفقي 16:9").forEach { ratio ->
+                                    FilterChip(selected = aspect == ratio, onClick = { aspect = ratio }, label = { Text(ratio, fontSize = 11.sp) })
+                                }
+                            }
+                            Text("مدة اللقطة", color = gold, fontWeight = FontWeight.Bold)
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 listOf(5, 8, 10).forEach { n -> FilterChip(selected = length == n, onClick = { length = n }, label = { Text("$n ثوانٍ") }) }
                             }
