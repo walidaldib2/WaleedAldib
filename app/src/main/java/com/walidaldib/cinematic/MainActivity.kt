@@ -148,18 +148,19 @@ private fun Studio(context: Context) {
                             Text("⚡ محلي", color = gold, fontWeight = FontWeight.Bold)
                         }
                     }
-                    item { HomeSection("ابدأ الإنشاء", listOf("صورة إلى فيديو", "نص إلى فيديو", "تمديد فيديو", "قوالب مؤثرة")) { label ->
+                    item { HomeSection("ابدأ الإنشاء", listOf("صورة إلى فيديو", "نص إلى فيديو", "قوالب", "مشاريعي")) { label ->
+                        when (label) {
+                            "صورة إلى فيديو" -> { activeTool = label; page = "إنشاء"; picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+                            "نص إلى فيديو" -> { activeTool = label; page = "إنشاء"; notice = "توليد الفيديو من النص يحتاج ربط محرك ذكاء اصطناعي." }
+                            "قوالب" -> { activeTool = "قوالب"; page = "إنشاء"; createMode = "قوالب"; notice = "القوالب الجاهزة ستظهر هنا عند إضافة محتواها." }
+                            else -> page = "مشاريعي"
+                        }
+                    } }
+                    item { HomeSection("أدوات إبداعية", listOf("تحرير الصور", "الحركة والمؤثرات", "الصوت والشخصيات", "التحولات")) { label ->
                         activeTool = label
                         page = "إنشاء"
-                        if (label != "صورة إلى فيديو") notice = "الأداة دي ضمن الواجهة، ومحرك التوليد الخاص بها لم يتم ربطه بعد."
+                        notice = "الأداة دي تحتاج محركها المتخصص قبل تفعيلها."
                     } }
-                    item { HomeSection("الرائج", listOf("لقطة سينمائية", "حركة بطيئة", "تحول درامي", "مشهد خيالي")) { label -> prompt = "أنشئ مشهدًا سينمائيًا بأسلوب ${label}، حركة طبيعية وإضاءة احترافية"; activeTool = "صورة إلى فيديو"; page = "إنشاء" } }
-                    item { HomeSection("الأروع", listOf("عالم الروبوتات", "سحر الطبيعة", "بوابة خيالية", "عالم مصغر")) { label -> prompt = "اصنع مشهدًا إبداعيًا بعنوان ${label}"; activeTool = "صورة إلى فيديو"; page = "إنشاء" } }
-                    item { HomeSection("جديد", listOf("إضاءة سينمائية", "عالم مصغر", "ستايل أنمي", "بورتريه فني")) { label -> prompt = "حوّل الصورة إلى ${label} بتفاصيل عالية"; activeTool = "صورة إلى فيديو"; page = "إنشاء" } }
-                    item { HomeSection("تحويل الصور", listOf("تغيير الستايل", "تغيير الخلفية", "ترميم الصورة", "تحسين الجودة")) { label -> notice = "${label} يحتاج محرك معالجة صور قبل تفعيله."; page = "إنشاء"; createMode = "صورة" } }
-                    item { HomeSection("تفاعل", listOf("لقاء عاطفي", "تحريك الوجه", "رقصة بالذكاء", "شخصيات تتحدث")) { label -> notice = "${label} يحتاج محرك ذكاء اصطناعي متخصصًا قبل تفعيله."; page = "إنشاء" } }
-                    item { HomeSection("Morph", listOf("تحول الشخصية", "تحول الملابس", "تحول المكان", "تحول فني")) { label -> notice = "تأثير ${label} يحتاج محرك توليد صور وفيديو قبل تفعيله."; page = "إنشاء" } }
-                    item { HomeSection("الصوت والشخصيات", listOf("تحريك الشفاه", "مزامنة الصوت", "مؤثرات صوتية", "شخصية ثابتة")) { label -> notice = "${label} يحتاج محرك ذكاء اصطناعي متخصصًا قبل تفعيله."; page = "إنشاء" } }
                 } else if (page == "حسابي") {
                     item { Text("حسابي", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold) }
                     item { Note("وليد الديب", "استوديو صناعة الفيديو والصور على هذا الهاتف.") }
