@@ -14,6 +14,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -53,6 +54,7 @@ private fun Studio(context: Context) {
     var length by remember { mutableIntStateOf(prefs.getInt("length", 5)) }
     var notice by remember { mutableStateOf("الاستوديو جاهز. اختر صورة للبدء.") }
     var projects by remember { mutableStateOf(readProjects(prefs)) }
+    var deleteIndex by remember { mutableStateOf<Int?>(null) }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
             image = uri
@@ -61,6 +63,26 @@ private fun Studio(context: Context) {
             page = "إنشاء"
             notice = "تم اختيار الصورة. احفظ إعدادات مشروعك."
         }
+    }
+    if (deleteIndex != null) {
+        AlertDialog(
+            onDismissRequest = { deleteIndex = null },
+            title = { Text("حذف المشروع؟") },
+            text = { Text("سيتم حذف المشروع المحفوظ من هذا الهاتف.") },
+            confirmButton = { TextButton(onClick = {
+                val index = deleteIndex
+                if (index != null && index in projects.indices) {
+                    projects = projects.toMutableList().also { it.removeAt(index) }
+                    writeProjects(prefs, projects)
+                    notice = "تم حذف المشروع."
+                }
+                deleteIndex = null
+            }) { Text("حذف", color = Color(0xFFE28B8B)) } },
+            dismissButton = { TextButton(onClick = { deleteIndex = null }) { Text("إلغاء") } },
+            containerColor = panel,
+            titleContentColor = Color.White,
+            textContentColor = muted
+        )
     }
     MaterialTheme(colorScheme = darkColorScheme(background = bg, surface = panel, primary = gold)) {
         Scaffold(containerColor = bg, bottomBar = {
@@ -91,14 +113,17 @@ private fun Studio(context: Context) {
                 if (page == "مشاريعي") {
                     item { Text("مشاريعي", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold) }
                     if (projects.isEmpty()) item { Note("لا توجد مشروعات محفوظة", "ابدأ من صفحة إنشاء واحفظ إعدادات أول مشروع.") }
-                    items(projects) { p ->
+                    itemsIndexed(projects) { index, p ->
                         Row(Modifier.fillMaxWidth().background(panel, RoundedCornerShape(16.dp)).clickable {
                             image = Uri.parse(p.image); prompt = p.prompt; movement = p.movement; length = p.length; page = "إنشاء"
                         }.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                             AsyncImage(model = Uri.parse(p.image), contentDescription = null, modifier = Modifier.size(66.dp).background(bg, RoundedCornerShape(10.dp)))
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) { Text(p.name, color = Color.White, fontWeight = FontWeight.Bold); Text(p.movement + " • " + p.length + " ثوانٍ", color = muted, fontSize = 11.sp) }
-                            Text("فتح", color = gold)
+                            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text("فتح", color = gold)
+                                Text("حذف", color = Color(0xFFE28B8B), modifier = Modifier.clickable { deleteIndex = index })
+                            }
                         }
                     }
                 } else {
