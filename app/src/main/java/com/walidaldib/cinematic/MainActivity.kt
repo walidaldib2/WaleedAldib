@@ -26,6 +26,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -55,6 +58,8 @@ private fun Studio(context: Context) {
     var notice by remember { mutableStateOf("الاستوديو جاهز. اختر صورة للبدء.") }
     var projects by remember { mutableStateOf(readProjects(prefs)) }
     var deleteIndex by remember { mutableStateOf<Int?>(null) }
+    var exporting by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
             image = uri
@@ -163,10 +168,37 @@ private fun Studio(context: Context) {
                                     notice = "تم حفظ المشروع وإعداداته على هذا الهاتف."
                                 }
                             }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = gold, contentColor = bg)) { Text("حفظ المشروع", fontWeight = FontWeight.Bold) }
+                            Button(
+                                onClick = {
+                                    val source = image
+                                    if (source == null) notice = "اختَر صورة أولًا."
+                                    else if (!exporting) {
+                                        exporting = true
+                                        notice = "جارٍ إنشاء الفيديو..."
+                                        scope.launch {
+                                            try {
+                                                val saved = withContext(Dispatchers.IO) {
+                                                    LocalVideoExporter.export(context, source, length, movement)
+                                                }
+                                                notice = "تم حفظ الفيديو في المعرض: Movies/WaleedAldib"
+                                            } catch (e: Exception) {
+                                                notice = "فشل إنشاء الفيديو: ${e.message ?: "خطأ غير معروف"}"
+                                            } finally {
+                                                exporting = false
+                                            }
+                                        }
+                                    }
+                                },
+                                enabled = !exporting,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(containerColor = wine)
+                            ) {
+                                Text(if (exporting) "جارٍ تصدير الفيديو..." else "إنشاء وحفظ فيديو MP4", fontWeight = FontWeight.Bold)
+                            }
                             Text(notice, color = gold, fontSize = 12.sp)
                         }
                     }
-                    item { Note("بشفافية: ما الذي يعمل الآن؟", "استيراد الصور عبر منتقي أندرويد وحفظ إعدادات المشروعات محليًا يعملان داخل التطبيق. أدوات توليد الفيديو بالذكاء الاصطناعي على طريقة PixVerse وتصدير MP4 لم تُنفّذ بعد؛ لن أقدمها لك على أنها جاهزة.") }
+                    item { Note("أدوات الاستوديو", "تصدير MP4 محليًا يضيف حركة تقريب أو ابتعاد أو تحريك أفقي للصورة ويحفظ النتيجة في مجلد Movies/WaleedAldib. توليد فيديو ذكاء اصطناعي من النص أو تحويل الصورة إلى مشهد جديد ما زال يحتاج محرك توليد مستقل.") }
                 }
                 item { Spacer(Modifier.height(12.dp)) }
             }
