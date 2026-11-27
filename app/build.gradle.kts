@@ -24,6 +24,11 @@ android {
     buildFeatures { compose = true }
 }
 
+// Keep Java and Kotlin bytecode targets aligned in CI and Android Studio.
+tasks.withType<org.gradle.api.tasks.compile.JavaCompile>().configureEach {
+    options.release.set(17)
+}
+
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2024.12.01")
     implementation(composeBom)
