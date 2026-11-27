@@ -1,13 +1,19 @@
 package com.walidaldib.cinematic
 
+import android.content.Context
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,88 +22,160 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import org.json.JSONArray
+import org.json.JSONObject
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { WaleedAldibApp() }
+        setContent { Studio(this) }
     }
 }
 
-private val Ink = Color(0xFF101014)
-private val Panel = Color(0xFF1B1B22)
-private val Gold = Color(0xFFD6B36A)
-private val Muted = Color(0xFFAAA7A0)
-private val Wine = Color(0xFF7D263D)
+private val bg = Color(0xFF101014)
+private val panel = Color(0xFF1D1B22)
+private val gold = Color(0xFFD6B36A)
+private val wine = Color(0xFF7D263D)
+private val muted = Color(0xFFAAA7A0)
+
+private data class SavedProject(val name: String, val image: String, val prompt: String, val movement: String, val length: Int)
 
 @Composable
-private fun WaleedAldibApp() {
-    var selected by remember { mutableStateOf("الرئيسية") }
-    var prompt by remember { mutableStateOf("") }
-    MaterialTheme(colorScheme = darkColorScheme(background = Ink, surface = Panel, primary = Gold)) {
-        Scaffold(containerColor = Ink, bottomBar = {
-            NavigationBar(containerColor = Panel, contentColor = Gold) {
-                listOf("الرئيسية", "إنشاء", "مشاريعي").forEach { item ->
-                    NavigationBarItem(
-                        selected = selected == item,
-                        onClick = { selected = item },
-                        icon = { Text(when (item) { "الرئيسية" -> "⌂"; "إنشاء" -> "✦"; else -> "▤" }, fontSize = 20.sp) },
-                        label = { Text(item) },
-                        colors = NavigationBarItemDefaults.colors(selectedIconColor = Gold, selectedTextColor = Gold, indicatorColor = Wine, unselectedIconColor = Muted, unselectedTextColor = Muted)
-                    )
+private fun Studio(context: Context) {
+    val prefs = remember { context.getSharedPreferences("studio_projects", Context.MODE_PRIVATE) }
+    var page by remember { mutableStateOf("الرئيسية") }
+    var image by remember { mutableStateOf(prefs.getString("last_image", null)?.let(Uri::parse)) }
+    var prompt by remember { mutableStateOf(prefs.getString("prompt", "") ?: "") }
+    var movement by remember { mutableStateOf(prefs.getString("movement", "تقريب سينمائي") ?: "تقريب سينمائي") }
+    var length by remember { mutableIntStateOf(prefs.getInt("length", 5)) }
+    var notice by remember { mutableStateOf("الاستوديو جاهز. اختر صورة للبدء.") }
+    var projects by remember { mutableStateOf(readProjects(prefs)) }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            image = uri
+            runCatching { context.contentResolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+            prefs.edit().putString("last_image", uri.toString()).apply()
+            page = "إنشاء"
+            notice = "تم اختيار الصورة. احفظ إعدادات مشروعك."
+        }
+    }
+    MaterialTheme(colorScheme = darkColorScheme(background = bg, surface = panel, primary = gold)) {
+        Scaffold(containerColor = bg, bottomBar = {
+            NavigationBar(containerColor = panel) {
+                listOf("الرئيسية", "إنشاء", "مشاريعي").forEach { tab ->
+                    NavigationBarItem(selected = page == tab, onClick = { page = tab },
+                        icon = { Text(if (tab == "الرئيسية") "⌂" else if (tab == "إنشاء") "✦" else "▤", color = gold) },
+                        label = { Text(tab) },
+                        colors = NavigationBarItemDefaults.colors(selectedIconColor = gold, selectedTextColor = gold, indicatorColor = wine, unselectedTextColor = muted))
                 }
             }
-        }) { padding ->
-            LazyColumn(Modifier.fillMaxSize().padding(padding).padding(horizontal = 18.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                item { Spacer(Modifier.height(12.dp)); Header() }
+        }) { inset ->
+            LazyColumn(Modifier.fillMaxSize().padding(inset).padding(horizontal = 18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 item {
-                    Box(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF38202B), Color(0xFF17171D))), RoundedCornerShape(24.dp)).border(1.dp, Gold.copy(alpha = .35f), RoundedCornerShape(24.dp)).padding(20.dp)) {
-                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Text("استوديو وليد الديب", color = Gold, fontSize = 23.sp, fontWeight = FontWeight.Bold)
-                            Text("اصنع مشاهدك… من صورة أو من خيالك", color = Color.White, fontSize = 15.sp)
-                            Text("مساحة عمل سينمائية للصور والأفكار والمشروعات", color = Muted, fontSize = 12.sp)
+                    Spacer(Modifier.height(12.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Column { Text("وليد الديب", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold); Text("CINEMATIC STUDIO", color = gold, fontSize = 10.sp, letterSpacing = 2.sp) }
+                        Box(Modifier.size(46.dp).border(1.dp, gold, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) { Text("WD", color = gold, fontWeight = FontWeight.Bold) }
+                    }
+                }
+                item {
+                    Column(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF492536), Color(0xFF1C1A22))), RoundedCornerShape(22.dp)).padding(18.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                        Text("استوديو وليد الديب", color = gold, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                        Text("مساحة لصناعة اللقطات السينمائية من صورك", color = Color.White, fontSize = 14.sp)
+                        Text("واجهة عربية • حفظ مشروعات محلي • أدوات حركة", color = muted, fontSize = 11.sp)
+                    }
+                }
+                if (page == "مشاريعي") {
+                    item { Text("مشاريعي", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold) }
+                    if (projects.isEmpty()) item { Note("لا توجد مشروعات محفوظة", "ابدأ من صفحة إنشاء واحفظ إعدادات أول مشروع.") }
+                    items(projects) { p ->
+                        Row(Modifier.fillMaxWidth().background(panel, RoundedCornerShape(16.dp)).clickable {
+                            image = Uri.parse(p.image); prompt = p.prompt; movement = p.movement; length = p.length; page = "إنشاء"
+                        }.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            AsyncImage(model = Uri.parse(p.image), contentDescription = null, modifier = Modifier.size(66.dp).background(bg, RoundedCornerShape(10.dp)))
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) { Text(p.name, color = Color.White, fontWeight = FontWeight.Bold); Text(p.movement + " • " + p.length + " ثوانٍ", color = muted, fontSize = 11.sp) }
+                            Text("فتح", color = gold)
                         }
                     }
-                }
-                item { Text(if (selected == "إنشاء") "ابدأ مشروعًا جديدًا" else if (selected == "مشاريعي") "مساحة مشروعاتك" else "أدوات الاستوديو", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold) }
-                item { FeatureCard("صورة إلى فيديو", "تحريك صورة ثابتة وبناء لقطة سينمائية", "▶", selected == "إنشاء") { selected = "إنشاء" } }
-                item { FeatureCard("نص إلى فيديو", "تحويل وصفك إلى مشهد متحرك", "✎", selected == "إنشاء") { selected = "إنشاء" } }
-                item { FeatureCard("تحريك المشاهد والشخصيات", "حركة كاميرا وعمق وانتقالات", "✧", selected == "إنشاء") { selected = "إنشاء" } }
-                item {
-                    Column(Modifier.fillMaxWidth().background(Panel, RoundedCornerShape(20.dp)).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("وصف المشهد", color = Gold, fontWeight = FontWeight.Bold)
-                        OutlinedTextField(value = prompt, onValueChange = { prompt = it }, modifier = Modifier.fillMaxWidth(), minLines = 3, placeholder = { Text("اكتب فكرتك بالعربي أو الإنجليزي…", color = Muted) }, colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White, focusedBorderColor = Gold, unfocusedBorderColor = Muted.copy(alpha = .4f)))
-                        Text("محرك توليد الفيديو لم يُربط بعد. لن يتم عرض زر إنشاء وهمي.", color = Muted, fontSize = 11.sp, lineHeight = 17.sp)
+                } else {
+                    item { Text(if (page == "إنشاء") "محرر المشروع" else "ابدأ مشروعك", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold) }
+                    item {
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            ToolTile("صورة إلى فيديو", "تحريك صورة ثابتة", "▶", true) { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+                            ToolTile("نص إلى فيديو", "محرك التوليد غير مربوط", "✎", false) { notice = "توليد فيديو من النص يحتاج محرك ذكاء اصطناعي خارجيًا أو نموذجًا محليًا." }
+                        }
                     }
+                    item {
+                        Column(Modifier.fillMaxWidth().background(panel, RoundedCornerShape(18.dp)).padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Text("الصورة المصدر", color = gold, fontWeight = FontWeight.Bold)
+                            if (image != null) AsyncImage(model = image, contentDescription = "الصورة المختارة", modifier = Modifier.fillMaxWidth().heightIn(max = 250.dp).background(bg, RoundedCornerShape(12.dp)))
+                            else Box(Modifier.fillMaxWidth().height(120.dp).background(bg, RoundedCornerShape(12.dp)).clickable { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, contentAlignment = Alignment.Center) { Text("＋  اختر صورة من هاتفك", color = gold) }
+                            Button(onClick = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = wine)) { Text("اختيار صورة") }
+                            Text("وصف اللقطة", color = gold, fontWeight = FontWeight.Bold)
+                            OutlinedTextField(value = prompt, onValueChange = { prompt = it }, modifier = Modifier.fillMaxWidth(), minLines = 2, placeholder = { Text("اكتب وصف المشهد أو الحركة المطلوبة") })
+                            Text("حركة الكاميرا", color = gold, fontWeight = FontWeight.Bold)
+                            listOf("تقريب سينمائي", "ابتعاد سينمائي", "تحريك أفقي").forEach { choice ->
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { movement = choice }) {
+                                    RadioButton(selected = movement == choice, onClick = { movement = choice }, colors = RadioButtonDefaults.colors(selectedColor = gold))
+                                    Text(choice, color = Color.White)
+                                }
+                            }
+                            Text("مدة اللقطة", color = gold, fontWeight = FontWeight.Bold)
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                listOf(5, 8, 10).forEach { n -> FilterChip(selected = length == n, onClick = { length = n }, label = { Text("$n ثوانٍ") }) }
+                            }
+                            Button(onClick = {
+                                if (image == null) notice = "اختَر صورة أولًا."
+                                else {
+                                    val updated = projects + SavedProject("مشروع " + (projects.size + 1), image.toString(), prompt, movement, length)
+                                    projects = updated
+                                    writeProjects(prefs, updated)
+                                    prefs.edit().putString("prompt", prompt).putString("movement", movement).putInt("length", length).apply()
+                                    notice = "تم حفظ المشروع وإعداداته على هذا الهاتف."
+                                }
+                            }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = gold, contentColor = bg)) { Text("حفظ المشروع", fontWeight = FontWeight.Bold) }
+                            Text(notice, color = gold, fontSize = 12.sp)
+                        }
+                    }
+                    item { Note("بشفافية: ما الذي يعمل الآن؟", "استيراد الصور عبر منتقي أندرويد وحفظ إعدادات المشروعات محليًا يعملان داخل التطبيق. أدوات توليد الفيديو بالذكاء الاصطناعي على طريقة PixVerse وتصدير MP4 لم تُنفّذ بعد؛ لن أقدمها لك على أنها جاهزة.") }
                 }
-                item { Text("هذا إصدار تأسيسي للواجهة، وليس مولّد فيديو مكتملًا بعد.", color = Muted, fontSize = 11.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp)) }
+                item { Spacer(Modifier.height(12.dp)) }
             }
         }
     }
 }
 
 @Composable
-private fun Header() {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-        Column {
-            Text("وليد الديب", color = Color.White, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
-            Text("CINEMATIC AI STUDIO", color = Gold, fontSize = 10.sp, letterSpacing = 2.sp)
-        }
-        Box(Modifier.size(44.dp).border(1.dp, Gold, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) { Text("WD", color = Gold, fontWeight = FontWeight.Bold) }
+private fun ToolTile(title: String, subtitle: String, icon: String, active: Boolean, onClick: () -> Unit) {
+    Column(Modifier.weight(1f).background(panel, RoundedCornerShape(16.dp)).border(1.dp, if (active) gold.copy(alpha = .4f) else muted.copy(alpha = .15f), RoundedCornerShape(16.dp)).clickable(enabled = active, onClick = onClick).padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(icon, color = gold, fontSize = 24.sp)
+        Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+        Text(subtitle, color = muted, fontSize = 10.sp)
     }
 }
 
 @Composable
-private fun FeatureCard(title: String, subtitle: String, symbol: String, active: Boolean, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().background(Panel, RoundedCornerShape(18.dp)).border(1.dp, if (active) Gold.copy(alpha = .7f) else Color.White.copy(alpha = .06f), RoundedCornerShape(18.dp)).clickable(onClick = onClick).padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-        Box(Modifier.size(48.dp).background(Wine.copy(alpha = .55f), RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) { Text(symbol, color = Gold, fontSize = 23.sp) }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-            Text(subtitle, color = Muted, fontSize = 11.sp)
-        }
-        Text("‹", color = Gold, fontSize = 25.sp)
+private fun Note(title: String, body: String) {
+    Column(Modifier.fillMaxWidth().background(panel, RoundedCornerShape(16.dp)).padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(title, color = gold, fontWeight = FontWeight.Bold)
+        Text(body, color = muted, fontSize = 11.sp, lineHeight = 17.sp)
     }
+}
+
+private fun readProjects(prefs: android.content.SharedPreferences): List<SavedProject> {
+    val a = runCatching { JSONArray(prefs.getString("projects", "[]")) }.getOrNull() ?: JSONArray()
+    return (0 until a.length()).mapNotNull { i -> runCatching {
+        val o = a.getJSONObject(i)
+        SavedProject(o.getString("name"), o.getString("image"), o.optString("prompt"), o.optString("movement"), o.optInt("length", 5))
+    }.getOrNull() }
+}
+
+private fun writeProjects(prefs: android.content.SharedPreferences, projects: List<SavedProject>) {
+    val a = JSONArray()
+    projects.forEach { p -> a.put(JSONObject().put("name", p.name).put("image", p.image).put("prompt", p.prompt).put("movement", p.movement).put("length", p.length)) }
+    prefs.edit().putString("projects", a.toString()).apply()
 }
