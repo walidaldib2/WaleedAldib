@@ -40,10 +40,10 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private val bg = Color(0xFF101014)
-private val panel = Color(0xFF1D1B22)
-private val gold = Color(0xFFD6B36A)
-private val wine = Color(0xFF7D263D)
+private val bg = Color(0xFF09090D)
+private val panel = Color(0xFF17151E)
+private val gold = Color(0xFFE18BFF)
+private val wine = Color(0xFF8B3DCE)
 private val muted = Color(0xFFAAA7A0)
 
 private data class SavedProject(val name: String, val image: String, val prompt: String, val movement: String, val length: Int, val aspect: String = "عمودي 9:16")
@@ -117,7 +117,7 @@ private fun Studio(context: Context) {
                 }
                 if (page == "الرئيسية") {
                     item {
-                        Row(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF492536), Color(0xFF1C1A22))), RoundedCornerShape(18.dp)).padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        Row(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF44205F), Color(0xFF17151E))), RoundedCornerShape(18.dp)).padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text("استوديو وليد الديب", color = gold, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                                 Text("حوّل أفكارك إلى مشاهد", color = Color.White, fontSize = 12.sp)
@@ -131,8 +131,11 @@ private fun Studio(context: Context) {
                         if (label != "صورة إلى فيديو") notice = "الأداة دي ضمن الواجهة، ومحرك التوليد الخاص بها لم يتم ربطه بعد."
                     } }
                     item { HomeSection("الرائج", listOf("لقطة سينمائية", "حركة بطيئة", "تحول درامي", "مشهد خيالي")) { label -> prompt = "أنشئ مشهدًا سينمائيًا بأسلوب ${label}، حركة طبيعية وإضاءة احترافية"; activeTool = "صورة إلى فيديو"; page = "إنشاء" } }
+                    item { HomeSection("الأروع", listOf("عالم الروبوتات", "سحر الطبيعة", "بوابة خيالية", "عالم مصغر")) { label -> prompt = "اصنع مشهدًا إبداعيًا بعنوان ${label}"; activeTool = "صورة إلى فيديو"; page = "إنشاء" } }
                     item { HomeSection("جديد", listOf("إضاءة سينمائية", "عالم مصغر", "ستايل أنمي", "بورتريه فني")) { label -> prompt = "حوّل الصورة إلى ${label} بتفاصيل عالية"; activeTool = "صورة إلى فيديو"; page = "إنشاء" } }
                     item { HomeSection("تحويل الصور", listOf("تغيير الستايل", "تغيير الخلفية", "ترميم الصورة", "تحسين الجودة")) { label -> notice = "${label} يحتاج محرك معالجة صور قبل تفعيله."; page = "إنشاء"; createMode = "صورة" } }
+                    item { HomeSection("تفاعل", listOf("لقاء عاطفي", "تحريك الوجه", "رقصة بالذكاء", "شخصيات تتحدث")) { label -> notice = "${label} يحتاج محرك ذكاء اصطناعي متخصصًا قبل تفعيله."; page = "إنشاء" } }
+                    item { HomeSection("Morph", listOf("تحول الشخصية", "تحول الملابس", "تحول المكان", "تحول فني")) { label -> notice = "تأثير ${label} يحتاج محرك توليد صور وفيديو قبل تفعيله."; page = "إنشاء" } }
                     item { HomeSection("الصوت والشخصيات", listOf("تحريك الشفاه", "مزامنة الصوت", "مؤثرات صوتية", "شخصية ثابتة")) { label -> notice = "${label} يحتاج محرك ذكاء اصطناعي متخصصًا قبل تفعيله."; page = "إنشاء" } }
                 } else if (page == "حسابي") {
                     item { Text("حسابي", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold) }
