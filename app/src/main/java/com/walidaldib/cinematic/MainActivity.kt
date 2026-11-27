@@ -67,6 +67,7 @@ private fun Studio(context: Context) {
     var projects by remember { mutableStateOf(readProjects(prefs)) }
     var exports by remember { mutableStateOf(readExports(prefs)) }
     var deleteIndex by remember { mutableStateOf<Int?>(null) }
+    var deleteExportIndex by remember { mutableStateOf<Int?>(null) }
     var exporting by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -93,6 +94,26 @@ private fun Studio(context: Context) {
                 deleteIndex = null
             }) { Text("حذف", color = Color(0xFFE28B8B)) } },
             dismissButton = { TextButton(onClick = { deleteIndex = null }) { Text("إلغاء") } },
+            containerColor = panel,
+            titleContentColor = Color.White,
+            textContentColor = muted
+        )
+    }
+    if (deleteExportIndex != null) {
+        AlertDialog(
+            onDismissRequest = { deleteExportIndex = null },
+            title = { Text("إزالة الفيديو من القائمة؟") },
+            text = { Text("سيُزال سجل الفيديو من داخل التطبيق فقط، وسيظل ملف MP4 محفوظًا في معرض الهاتف.") },
+            confirmButton = { TextButton(onClick = {
+                val index = deleteExportIndex
+                if (index != null && index in exports.indices) {
+                    exports = exports.toMutableList().also { it.removeAt(index) }
+                    writeExports(prefs, exports)
+                    notice = "تمت إزالة سجل الفيديو من القائمة."
+                }
+                deleteExportIndex = null
+            }) { Text("إزالة", color = Color(0xFFE28B8B)) } },
+            dismissButton = { TextButton(onClick = { deleteExportIndex = null }) { Text("إلغاء") } },
             containerColor = panel,
             titleContentColor = Color.White,
             textContentColor = muted
@@ -164,6 +185,9 @@ private fun Studio(context: Context) {
                                 val send = Intent(Intent.ACTION_SEND).setType("video/mp4").putExtra(Intent.EXTRA_STREAM, Uri.parse(video.uri)).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                 runCatching { context.startActivity(Intent.createChooser(send, "مشاركة فيديو وليد الديب")) }
                                     .onFailure { notice = "تعذرت مشاركة الفيديو." }
+                            }.padding(6.dp))
+                            Text("إزالة", color = Color(0xFFE28B8B), modifier = Modifier.clickable {
+                                deleteExportIndex = index
                             }.padding(6.dp))
                         }
                     }
