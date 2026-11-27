@@ -28,8 +28,12 @@ object LocalVideoExporter {
     private const val FPS = 24
 
     fun export(context: Context, source: Uri, seconds: Int, movement: String): Uri {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        context.contentResolver.openInputStream(source)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+        var sample = 1
+        while (bounds.outWidth / sample > 1920 || bounds.outHeight / sample > 1920) sample *= 2
         val bitmap = context.contentResolver.openInputStream(source)?.use {
-            BitmapFactory.decodeStream(it)
+            BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample })
         } ?: error("تعذر قراءة الصورة")
         val outputFile = File(context.cacheDir, "wd_${System.currentTimeMillis()}.mp4")
         var codec: MediaCodec? = null
@@ -135,6 +139,7 @@ object LocalVideoExporter {
                 val progress = frame.toFloat() / (frames - 1).coerceAtLeast(1)
                 val zoom = when (movement) {
                     "ابتعاد سينمائي" -> 1.12f - 0.12f * progress
+                    "تحريك أفقي" -> 1.12f
                     else -> 1f + 0.12f * progress
                 }
                 val shift = if (movement == "تحريك أفقي") (progress - 0.5f) * -0.12f else 0f
@@ -151,13 +156,17 @@ object LocalVideoExporter {
             drain(true)
             check(muxerStarted) { "لم يتم إنشاء مسار الفيديو" }
         } finally {
+            if (texture != 0 && eglDisplay != EGL14.EGL_NO_DISPLAY && eglContext != EGL14.EGL_NO_CONTEXT) {
+                EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)
+                GLES20.glDeleteTextures(1, intArrayOf(texture), 0)
+                texture = 0
+            }
             if (eglDisplay != EGL14.EGL_NO_DISPLAY) {
                 EGL14.eglMakeCurrent(eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT)
                 if (eglSurface != EGL14.EGL_NO_SURFACE) EGL14.eglDestroySurface(eglDisplay, eglSurface)
                 if (eglContext != EGL14.EGL_NO_CONTEXT) EGL14.eglDestroyContext(eglDisplay, eglContext)
                 EGL14.eglTerminate(eglDisplay)
             }
-            if (texture != 0) GLES20.glDeleteTextures(1, intArrayOf(texture), 0)
             runCatching { codec?.stop() }; runCatching { codec?.release() }
             runCatching { muxer?.stop() }; runCatching { muxer?.release() }
             bitmap.recycle()
