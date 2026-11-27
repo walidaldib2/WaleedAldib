@@ -195,7 +195,7 @@ private fun Studio(context: Context) {
                             }
                         }
                     }
-                } else {
+                } else if (page == "إنشاء") {
                     item { Text("إنشاء", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold) }
                     item {
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -327,6 +327,7 @@ private fun HomeSection(title: String, labels: List<String>, onSelect: (String) 
     }
 }
 
+@Composable
 private fun ToolTile(title: String, subtitle: String, icon: String, active: Boolean, onClick: () -> Unit) {
     Column(Modifier.fillMaxWidth(0.48f).background(panel, RoundedCornerShape(16.dp)).border(1.dp, if (active) gold.copy(alpha = .4f) else muted.copy(alpha = .15f), RoundedCornerShape(16.dp)).clickable(enabled = active, onClick = onClick).padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(icon, color = gold, fontSize = 24.sp)
