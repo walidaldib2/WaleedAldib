@@ -3,6 +3,8 @@ package com.walidaldib.cinematic
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import androidx.exifinterface.media.ExifInterface
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
@@ -31,6 +33,9 @@ object LocalVideoExporter {
             "أفقي 16:9" -> 1280 to 720
             else -> 720 to 1280
         }
+        val orientation = runCatching {
+            context.contentResolver.openInputStream(source)?.use { ExifInterface(it).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL) }
+        }.getOrDefault(ExifInterface.ORIENTATION_NORMAL)
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         context.contentResolver.openInputStream(source)?.use { BitmapFactory.decodeStream(it, null, bounds) }
         var sample = 1
@@ -38,6 +43,8 @@ object LocalVideoExporter {
         val bitmap = context.contentResolver.openInputStream(source)?.use {
             BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample })
         } ?: error("تعذر قراءة الصورة")
+        val orientedBitmap = applyExifOrientation(bitmap, orientation)
+        if (orientedBitmap !== bitmap) bitmap.recycle()
         val outputFile = File(context.cacheDir, "wd_${System.currentTimeMillis()}.mp4")
         var codec: MediaCodec? = null
         var muxer: MediaMuxer? = null
@@ -83,8 +90,8 @@ object LocalVideoExporter {
             val texCoord = GLES20.glGetAttribLocation(program, "aTexCoord")
             val scaleLoc = GLES20.glGetUniformLocation(program, "uScale")
             val shiftLoc = GLES20.glGetUniformLocation(program, "uShift")
-            texture = createTexture(bitmap)
-            val aspect = bitmap.width.toFloat() / bitmap.height.toFloat()
+            texture = createTexture(orientedBitmap)
+            val aspect = orientedBitmap.width.toFloat() / orientedBitmap.height.toFloat()
             val outAspect = width.toFloat() / height
             val u0: Float; val u1: Float; val v0: Float; val v1: Float
             if (aspect > outAspect) {
@@ -172,7 +179,7 @@ object LocalVideoExporter {
             }
             runCatching { codec?.stop() }; runCatching { codec?.release() }
             runCatching { muxer?.stop() }; runCatching { muxer?.release() }
-            bitmap.recycle()
+            orientedBitmap.recycle()
         }
         val name = "WaleedAldib_" + SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date()) + ".mp4"
         return if (Build.VERSION.SDK_INT >= 29) {
@@ -199,6 +206,21 @@ object LocalVideoExporter {
             outputFile.delete()
             Uri.fromFile(saved)
         }
+    }
+
+    private fun applyExifOrientation(bitmap: android.graphics.Bitmap, orientation: Int): android.graphics.Bitmap {
+        val matrix = Matrix()
+        when (orientation) {
+            ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.setScale(-1f, 1f)
+            ExifInterface.ORIENTATION_ROTATE_180 -> matrix.setRotate(180f)
+            ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.setScale(1f, -1f)
+            ExifInterface.ORIENTATION_TRANSPOSE -> { matrix.setRotate(90f); matrix.postScale(-1f, 1f) }
+            ExifInterface.ORIENTATION_ROTATE_90 -> matrix.setRotate(90f)
+            ExifInterface.ORIENTATION_TRANSVERSE -> { matrix.setRotate(-90f); matrix.postScale(-1f, 1f) }
+            ExifInterface.ORIENTATION_ROTATE_270 -> matrix.setRotate(-90f)
+            else -> return bitmap
+        }
+        return android.graphics.Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
 
     private fun floatBuffer(values: FloatArray): FloatBuffer =
