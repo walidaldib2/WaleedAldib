@@ -54,6 +54,7 @@ private fun Studio(context: Context) {
     val prefs = remember { context.getSharedPreferences("studio_projects", Context.MODE_PRIVATE) }
     var page by remember { mutableStateOf("الرئيسية") }
     var image by remember { mutableStateOf(prefs.getString("last_image", null)?.let(Uri::parse)) }
+    var projectName by remember { mutableStateOf("مشروعي الجديد") }
     var prompt by remember { mutableStateOf(prefs.getString("prompt", "") ?: "") }
     var movement by remember { mutableStateOf(prefs.getString("movement", "تقريب سينمائي") ?: "تقريب سينمائي") }
     var length by remember { mutableIntStateOf(prefs.getInt("length", 5)) }
@@ -145,7 +146,7 @@ private fun Studio(context: Context) {
                     if (projects.isEmpty()) item { Note("لا توجد مشروعات محفوظة", "ابدأ من صفحة إنشاء واحفظ إعدادات أول مشروع.") }
                     itemsIndexed(projects) { index, p ->
                         Row(Modifier.fillMaxWidth().background(panel, RoundedCornerShape(16.dp)).clickable {
-                            image = Uri.parse(p.image); prompt = p.prompt; movement = p.movement; length = p.length; aspect = p.aspect; page = "إنشاء"
+                            image = Uri.parse(p.image); projectName = p.name; prompt = p.prompt; movement = p.movement; length = p.length; aspect = p.aspect; page = "إنشاء"
                         }.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                             AsyncImage(model = Uri.parse(p.image), contentDescription = null, modifier = Modifier.size(66.dp).background(bg, RoundedCornerShape(10.dp)))
                             Spacer(Modifier.width(12.dp))
@@ -166,6 +167,8 @@ private fun Studio(context: Context) {
                     }
                     item {
                         Column(Modifier.fillMaxWidth().background(panel, RoundedCornerShape(18.dp)).padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Text("اسم المشروع", color = gold, fontWeight = FontWeight.Bold)
+                            OutlinedTextField(value = projectName, onValueChange = { projectName = it.take(40) }, modifier = Modifier.fillMaxWidth(), singleLine = true, placeholder = { Text("اكتب اسمًا لمشروعك") })
                             Text("الصورة المصدر", color = gold, fontWeight = FontWeight.Bold)
                             if (image != null) AsyncImage(model = image, contentDescription = "الصورة المختارة", modifier = Modifier.fillMaxWidth().heightIn(max = 250.dp).background(bg, RoundedCornerShape(12.dp)))
                             else Box(Modifier.fillMaxWidth().height(120.dp).background(bg, RoundedCornerShape(12.dp)).clickable { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, contentAlignment = Alignment.Center) { Text("＋  اختر صورة من هاتفك", color = gold) }
@@ -192,11 +195,15 @@ private fun Studio(context: Context) {
                             Button(onClick = {
                                 if (image == null) notice = "اختَر صورة أولًا."
                                 else {
-                                    val updated = projects + SavedProject("مشروع " + (projects.size + 1), image.toString(), prompt, movement, length, aspect)
+                                    val cleanName = projectName.trim().ifBlank { "مشروع " + (projects.size + 1) }
+                                    val savedProject = SavedProject(cleanName, image.toString(), prompt, movement, length, aspect)
+                                    val existing = projects.indexOfFirst { it.name.equals(cleanName, ignoreCase = true) }
+                                    val updated = projects.toMutableList().also { if (existing >= 0) it[existing] = savedProject else it.add(savedProject) }
                                     projects = updated
+                                    projectName = cleanName
                                     writeProjects(prefs, updated)
                                     prefs.edit().putString("prompt", prompt).putString("movement", movement).putInt("length", length).putString("aspect", aspect).apply()
-                                    notice = "تم حفظ المشروع وإعداداته على هذا الهاتف."
+                                    notice = if (existing >= 0) "تم تحديث المشروع المحفوظ." else "تم حفظ المشروع وإعداداته على هذا الهاتف."
                                 }
                             }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = gold, contentColor = bg)) { Text("حفظ المشروع", fontWeight = FontWeight.Bold) }
                             Button(
