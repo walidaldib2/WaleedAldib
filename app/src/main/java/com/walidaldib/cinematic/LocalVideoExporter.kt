@@ -43,7 +43,7 @@ object LocalVideoExporter {
         var eglSurface = EGL14.EGL_NO_SURFACE
         var texture = 0
         try {
-            val format = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC, WIDTH, HEIGHT).apply {
+            val format = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC, width, height).apply {
                 setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface)
                 setInteger(MediaFormat.KEY_BIT_RATE, 4_000_000)
                 setInteger(MediaFormat.KEY_FRAME_RATE, FPS)
@@ -82,7 +82,7 @@ object LocalVideoExporter {
             val shiftLoc = GLES20.glGetUniformLocation(program, "uShift")
             texture = createTexture(bitmap)
             val aspect = bitmap.width.toFloat() / bitmap.height.toFloat()
-            val outAspect = WIDTH.toFloat() / HEIGHT
+            val outAspect = width.toFloat() / height
             val u0: Float; val u1: Float; val v0: Float; val v1: Float
             if (aspect > outAspect) {
                 val visible = outAspect / aspect
@@ -101,7 +101,7 @@ object LocalVideoExporter {
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture)
             GLES20.glUniform1i(GLES20.glGetUniformLocation(program, "uTexture"), 0)
-            GLES20.glViewport(0, 0, WIDTH, HEIGHT)
+            GLES20.glViewport(0, 0, width, height)
 
             val info = MediaCodec.BufferInfo()
             var track = -1
