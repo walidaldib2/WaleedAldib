@@ -240,6 +240,6 @@ private fun readProjects(prefs: android.content.SharedPreferences): List<SavedPr
 
 private fun writeProjects(prefs: android.content.SharedPreferences, projects: List<SavedProject>) {
     val a = JSONArray()
-    projects.forEach { p -> a.put(JSONObject().put("name", p.name).put("image", p.image).put("prompt", p.prompt).put("movement", p.movement).put("length", p.length)) }
+    projects.forEach { p -> a.put(JSONObject().put("name", p.name).put("image", p.image).put("prompt", p.prompt).put("movement", p.movement).put("length", p.length).put("aspect", p.aspect)) }
     prefs.edit().putString("projects", a.toString()).apply()
 }
