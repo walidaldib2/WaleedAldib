@@ -90,6 +90,7 @@ object LocalVideoExporter {
             val texCoord = GLES20.glGetAttribLocation(program, "aTexCoord")
             val scaleLoc = GLES20.glGetUniformLocation(program, "uScale")
             val shiftLoc = GLES20.glGetUniformLocation(program, "uShift")
+            val shiftYLoc = GLES20.glGetUniformLocation(program, "uShiftY")
             texture = createTexture(orientedBitmap)
             val aspect = orientedBitmap.width.toFloat() / orientedBitmap.height.toFloat()
             val outAspect = width.toFloat() / height
@@ -149,14 +150,17 @@ object LocalVideoExporter {
                 val progress = frame.toFloat() / (frames - 1).coerceAtLeast(1)
                 val zoom = when (movement) {
                     "ابتعاد سينمائي" -> 1.12f - 0.12f * progress
-                    "تحريك أفقي" -> 1.12f
+                    "تحريك أفقي", "تحريك رأسي" -> 1.12f
+                    "تقريب ثم ابتعاد" -> 1f + 0.12f * kotlin.math.sin(progress * Math.PI).toFloat()
                     else -> 1f + 0.12f * progress
                 }
                 val shift = if (movement == "تحريك أفقي") (progress - 0.5f) * -0.12f else 0f
+                val shiftY = if (movement == "تحريك رأسي") (progress - 0.5f) * 0.12f else 0f
                 GLES20.glClearColor(0f, 0f, 0f, 1f)
                 GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
                 GLES20.glUniform1f(scaleLoc, zoom)
                 GLES20.glUniform1f(shiftLoc, shift)
+                GLES20.glUniform1f(shiftYLoc, shiftY)
                 GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
                 EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, frame * 1_000_000_000L / FPS)
                 check(EGL14.eglSwapBuffers(eglDisplay, eglSurface)) { "تعذر تسجيل إطار الفيديو" }
@@ -237,7 +241,7 @@ object LocalVideoExporter {
     }
 
     private fun createProgram(): Int {
-        val vertex = "attribute vec2 aPosition; attribute vec2 aTexCoord; varying vec2 vTex; uniform float uScale; uniform float uShift; void main(){ vec2 p=aPosition*uScale; p.x+=uShift; gl_Position=vec4(p,0.0,1.0); vTex=aTexCoord; }"
+        val vertex = "attribute vec2 aPosition; attribute vec2 aTexCoord; varying vec2 vTex; uniform float uScale; uniform float uShift; uniform float uShiftY; void main(){ vec2 p=aPosition*uScale; p.x+=uShift; p.y+=uShiftY; gl_Position=vec4(p,0.0,1.0); vTex=aTexCoord; }"
         val fragment = "precision mediump float; varying vec2 vTex; uniform sampler2D uTexture; void main(){ gl_FragColor=texture2D(uTexture,vTex); }"
         fun shader(type: Int, source: String): Int {
             val id = GLES20.glCreateShader(type)
