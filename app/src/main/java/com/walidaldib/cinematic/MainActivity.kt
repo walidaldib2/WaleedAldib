@@ -307,7 +307,6 @@ private fun Studio(context: Context) {
 }
 
 @Composable
-@Composable
 private fun HomeSection(title: String, labels: List<String>, onSelect: (String) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
