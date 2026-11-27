@@ -151,7 +151,7 @@ private fun Studio(context: Context) {
 
 @Composable
 private fun ToolTile(title: String, subtitle: String, icon: String, active: Boolean, onClick: () -> Unit) {
-    Column(Modifier.weight(1f).background(panel, RoundedCornerShape(16.dp)).border(1.dp, if (active) gold.copy(alpha = .4f) else muted.copy(alpha = .15f), RoundedCornerShape(16.dp)).clickable(enabled = active, onClick = onClick).padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(Modifier.fillMaxWidth(0.48f).background(panel, RoundedCornerShape(16.dp)).border(1.dp, if (active) gold.copy(alpha = .4f) else muted.copy(alpha = .15f), RoundedCornerShape(16.dp)).clickable(enabled = active, onClick = onClick).padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(icon, color = gold, fontSize = 24.sp)
         Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
         Text(subtitle, color = muted, fontSize = 10.sp)
