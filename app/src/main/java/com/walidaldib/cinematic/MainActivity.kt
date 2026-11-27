@@ -1,6 +1,7 @@
 package com.walidaldib.cinematic
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -46,6 +47,7 @@ private val wine = Color(0xFF7D263D)
 private val muted = Color(0xFFAAA7A0)
 
 private data class SavedProject(val name: String, val image: String, val prompt: String, val movement: String, val length: Int, val aspect: String = "عمودي 9:16")
+private data class SavedExport(val uri: String, val date: String, val movement: String, val aspect: String, val length: Int)
 
 @Composable
 private fun Studio(context: Context) {
@@ -58,6 +60,7 @@ private fun Studio(context: Context) {
     var aspect by remember { mutableStateOf(prefs.getString("aspect", "عمودي 9:16") ?: "عمودي 9:16") }
     var notice by remember { mutableStateOf("الاستوديو جاهز. اختر صورة للبدء.") }
     var projects by remember { mutableStateOf(readProjects(prefs)) }
+    var exports by remember { mutableStateOf(readExports(prefs)) }
     var deleteIndex by remember { mutableStateOf<Int?>(null) }
     var exporting by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -93,7 +96,7 @@ private fun Studio(context: Context) {
     MaterialTheme(colorScheme = darkColorScheme(background = bg, surface = panel, primary = gold)) {
         Scaffold(containerColor = bg, bottomBar = {
             NavigationBar(containerColor = panel) {
-                listOf("الرئيسية", "إنشاء", "مشاريعي").forEach { tab ->
+                listOf("الرئيسية", "إنشاء", "مشاريعي", "فيديوهاتي").forEach { tab ->
                     NavigationBarItem(selected = page == tab, onClick = { page = tab },
                         icon = { Text(if (tab == "الرئيسية") "⌂" else if (tab == "إنشاء") "✦" else "▤", color = gold) },
                         label = { Text(tab) },
@@ -116,7 +119,28 @@ private fun Studio(context: Context) {
                         Text("واجهة عربية • حفظ مشروعات محلي • أدوات حركة", color = muted, fontSize = 11.sp)
                     }
                 }
-                if (page == "مشاريعي") {
+                if (page == "فيديوهاتي") {
+                    item { Text("الفيديوهات المحفوظة", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold) }
+                    if (exports.isEmpty()) item { Note("لا توجد فيديوهات مصدّرة", "بعد إنشاء فيديو MP4 سيظهر هنا لتشغيله أو مشاركته.") }
+                    itemsIndexed(exports) { index, video ->
+                        Row(Modifier.fillMaxWidth().background(panel, RoundedCornerShape(16.dp)).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text("فيديو ${exports.size - index}", color = Color.White, fontWeight = FontWeight.Bold)
+                                Text("${video.movement} • ${video.length} ثوانٍ • ${video.aspect}", color = muted, fontSize = 11.sp)
+                                Text(video.date, color = muted, fontSize = 10.sp)
+                            }
+                            Text("تشغيل", color = gold, modifier = Modifier.clickable {
+                                runCatching { context.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(Uri.parse(video.uri), "video/mp4").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)) }
+                                    .onFailure { notice = "تعذر فتح الفيديو على هذا الهاتف." }
+                            }.padding(6.dp))
+                            Text("مشاركة", color = gold, modifier = Modifier.clickable {
+                                val send = Intent(Intent.ACTION_SEND).setType("video/mp4").putExtra(Intent.EXTRA_STREAM, Uri.parse(video.uri)).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                runCatching { context.startActivity(Intent.createChooser(send, "مشاركة فيديو وليد الديب")) }
+                                    .onFailure { notice = "تعذرت مشاركة الفيديو." }
+                            }.padding(6.dp))
+                        }
+                    }
+                } else if (page == "مشاريعي") {
                     item { Text("مشاريعي", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold) }
                     if (projects.isEmpty()) item { Note("لا توجد مشروعات محفوظة", "ابدأ من صفحة إنشاء واحفظ إعدادات أول مشروع.") }
                     itemsIndexed(projects) { index, p ->
@@ -187,7 +211,10 @@ private fun Studio(context: Context) {
                                                 val saved = withContext(Dispatchers.IO) {
                                                     LocalVideoExporter.export(context, source, length, movement, aspect)
                                                 }
-                                                notice = "تم حفظ الفيديو في المعرض: Movies/WaleedAldib"
+                                                val entry = SavedExport(saved.toString(), java.text.SimpleDateFormat("yyyy/MM/dd  HH:mm", java.util.Locale.getDefault()).format(java.util.Date()), movement, aspect, length)
+                                                exports = listOf(entry) + exports
+                                                writeExports(prefs, exports)
+                                                notice = "تم حفظ الفيديو في المعرض، وأضيف إلى فيديوهاتي."
                                             } catch (e: Exception) {
                                                 notice = "فشل إنشاء الفيديو: ${e.message ?: "خطأ غير معروف"}"
                                             } finally {
@@ -242,4 +269,21 @@ private fun writeProjects(prefs: android.content.SharedPreferences, projects: Li
     val a = JSONArray()
     projects.forEach { p -> a.put(JSONObject().put("name", p.name).put("image", p.image).put("prompt", p.prompt).put("movement", p.movement).put("length", p.length).put("aspect", p.aspect)) }
     prefs.edit().putString("projects", a.toString()).apply()
+}
+
+
+private fun readExports(prefs: android.content.SharedPreferences): List<SavedExport> {
+    val a = runCatching { JSONArray(prefs.getString("exports", "[]")) }.getOrNull() ?: JSONArray()
+    return (0 until a.length()).mapNotNull { i -> runCatching {
+        val o = a.getJSONObject(i)
+        SavedExport(o.getString("uri"), o.optString("date"), o.optString("movement"), o.optString("aspect", "عمودي 9:16"), o.optInt("length", 5))
+    }.getOrNull() }
+}
+
+private fun writeExports(prefs: android.content.SharedPreferences, exports: List<SavedExport>) {
+    val a = JSONArray()
+    exports.take(50).forEach { v ->
+        a.put(JSONObject().put("uri", v.uri).put("date", v.date).put("movement", v.movement).put("aspect", v.aspect).put("length", v.length))
+    }
+    prefs.edit().putString("exports", a.toString()).apply()
 }
