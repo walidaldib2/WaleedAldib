@@ -162,6 +162,18 @@ private fun Studio(context: Context) {
                             }.padding(6.dp))
                         }
                     }
+                    item { Text("المشروعات المحفوظة", color = gold, fontWeight = FontWeight.Bold) }
+                    if (projects.isEmpty()) item { Note("لا توجد مشروعات محفوظة", "احفظ إعدادات مشروعك من صفحة الإنشاء.") }
+                    itemsIndexed(projects) { index, p ->
+                        Row(Modifier.fillMaxWidth().background(panel, RoundedCornerShape(16.dp)).clickable {
+                            image = Uri.parse(p.image); projectName = p.name; prompt = p.prompt; movement = p.movement; length = p.length; aspect = p.aspect; page = "إنشاء"
+                        }.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            AsyncImage(model = Uri.parse(p.image), contentDescription = null, modifier = Modifier.size(60.dp).background(bg, RoundedCornerShape(10.dp)))
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) { Text(p.name, color = Color.White, fontWeight = FontWeight.Bold); Text(p.movement + " • " + p.length + " ثوانٍ", color = muted, fontSize = 11.sp) }
+                            Text("حذف", color = Color(0xFFE28B8B), modifier = Modifier.clickable { deleteIndex = index }.padding(6.dp))
+                        }
+                    }
                 } else if (page == "مشاريعي") {
                     item { Text("مشاريعي", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold) }
                     if (projects.isEmpty()) item { Note("لا توجد مشروعات محفوظة", "ابدأ من صفحة إنشاء واحفظ إعدادات أول مشروع.") }
