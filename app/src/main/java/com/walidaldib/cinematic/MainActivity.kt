@@ -42,11 +42,11 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private val bg = Color(0xFF09090D)
-private val panel = Color(0xFF17151E)
-private val gold = Color(0xFFE18BFF)
-private val wine = Color(0xFF8B3DCE)
-private val muted = Color(0xFFAAA7A0)
+private val bg = Color(0xFF0B0B0D)
+private val panel = Color(0xFF191719)
+private val gold = Color(0xFFD7AD62)
+private val wine = Color(0xFF702B3A)
+private val muted = Color(0xFFB8B0A8)
 
 private data class SavedProject(val name: String, val image: String, val prompt: String, val movement: String, val length: Int, val aspect: String = "عمودي 9:16")
 private data class SavedExport(val uri: String, val date: String, val movement: String, val aspect: String, val length: Int)
@@ -134,13 +134,13 @@ private fun Studio(context: Context) {
                 item {
                     Spacer(Modifier.height(12.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Column { Text("وليد الديب", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold); Text("CINEMATIC STUDIO", color = gold, fontSize = 10.sp, letterSpacing = 2.sp) }
+                        Column { Text("وليد الديب", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold); Text("AI VIDEO & PHOTO STUDIO", color = gold, fontSize = 10.sp, letterSpacing = 1.4.sp) }
                         Box(Modifier.size(46.dp).border(1.dp, gold, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) { Text("WD", color = gold, fontWeight = FontWeight.Bold) }
                     }
                 }
                 if (page == "الرئيسية") {
                     item {
-                        Row(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF44205F), Color(0xFF17151E))), RoundedCornerShape(18.dp)).padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        Row(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF552632), Color(0xFF17151E))), RoundedCornerShape(18.dp)).padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text("استوديو وليد الديب", color = gold, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                                 Text("حوّل أفكارك إلى مشاهد", color = Color.White, fontSize = 12.sp)
@@ -152,19 +152,19 @@ private fun Studio(context: Context) {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Text("ابدأ إبداعك", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                                Column(Modifier.weight(1f).height(118.dp).background(Brush.linearGradient(listOf(Color(0xFF58304D), Color(0xFF241B2B))), RoundedCornerShape(16.dp)).clickable {
+                                Column(Modifier.weight(1f).height(118.dp).background(Brush.linearGradient(listOf(Color(0xFF63303B), Color(0xFF21191C))), RoundedCornerShape(16.dp)).clickable {
                                     activeTool = "صورة إلى فيديو"; page = "إنشاء"; picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                                 }.padding(12.dp), verticalArrangement = Arrangement.Bottom) {
                                     Text("▣", color = gold, fontSize = 25.sp)
                                     Text("صورة إلى فيديو", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                 }
-                                Column(Modifier.weight(1f).height(118.dp).background(Brush.linearGradient(listOf(Color(0xFF263B4A), Color(0xFF171D28))), RoundedCornerShape(16.dp)).clickable {
+                                Column(Modifier.weight(1f).height(118.dp).background(Brush.linearGradient(listOf(Color(0xFF263A36), Color(0xFF171D1B))), RoundedCornerShape(16.dp)).clickable {
                                     activeTool = "نص إلى فيديو"; page = "إنشاء"; notice = "توليد الفيديو من النص يحتاج ربط محرك ذكاء اصطناعي."
                                 }.padding(12.dp), verticalArrangement = Arrangement.Bottom) {
                                     Text("✎", color = gold, fontSize = 25.sp)
                                     Text("نص إلى فيديو", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                 }
-                                Column(Modifier.weight(1f).height(118.dp).background(Brush.linearGradient(listOf(Color(0xFF3C354F), Color(0xFF1B1A27))), RoundedCornerShape(16.dp)).clickable {
+                                Column(Modifier.weight(1f).height(118.dp).background(Brush.linearGradient(listOf(Color(0xFF3A3029), Color(0xFF1B1917))), RoundedCornerShape(16.dp)).clickable {
                                     activeTool = "قوالب"; page = "إنشاء"; createMode = "قوالب"; notice = "القوالب ستظهر هنا عند إضافة مكتبتها."
                                 }.padding(12.dp), verticalArrangement = Arrangement.Bottom) {
                                     Text("✧", color = gold, fontSize = 25.sp)
