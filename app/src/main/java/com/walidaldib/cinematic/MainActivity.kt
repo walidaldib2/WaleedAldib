@@ -53,6 +53,8 @@ private data class SavedExport(val uri: String, val date: String, val movement: 
 private fun Studio(context: Context) {
     val prefs = remember { context.getSharedPreferences("studio_projects", Context.MODE_PRIVATE) }
     var page by remember { mutableStateOf("الرئيسية") }
+    var createMode by remember { mutableStateOf("فيديو") }
+    var activeTool by remember { mutableStateOf("صورة إلى فيديو") }
     var image by remember { mutableStateOf(prefs.getString("last_image", null)?.let(Uri::parse)) }
     var projectName by remember { mutableStateOf("مشروعي الجديد") }
     var prompt by remember { mutableStateOf(prefs.getString("prompt", "") ?: "") }
@@ -97,9 +99,9 @@ private fun Studio(context: Context) {
     MaterialTheme(colorScheme = darkColorScheme(background = bg, surface = panel, primary = gold)) {
         Scaffold(containerColor = bg, bottomBar = {
             NavigationBar(containerColor = panel) {
-                listOf("الرئيسية", "إنشاء", "مشاريعي", "فيديوهاتي").forEach { tab ->
+                listOf("الرئيسية", "إنشاء", "الأصول", "حسابي").forEach { tab ->
                     NavigationBarItem(selected = page == tab, onClick = { page = tab },
-                        icon = { Text(if (tab == "الرئيسية") "⌂" else if (tab == "إنشاء") "✦" else "▤", color = gold) },
+                        icon = { Text(when (tab) { "الرئيسية" -> "⌂"; "إنشاء" -> "✦"; "الأصول" -> "▤"; else -> "◎" }, color = gold) },
                         label = { Text(tab) },
                         colors = NavigationBarItemDefaults.colors(selectedIconColor = gold, selectedTextColor = gold, indicatorColor = wine, unselectedTextColor = muted))
                 }
@@ -113,14 +115,33 @@ private fun Studio(context: Context) {
                         Box(Modifier.size(46.dp).border(1.dp, gold, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) { Text("WD", color = gold, fontWeight = FontWeight.Bold) }
                     }
                 }
-                item {
-                    Column(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF492536), Color(0xFF1C1A22))), RoundedCornerShape(22.dp)).padding(18.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                        Text("استوديو وليد الديب", color = gold, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                        Text("مساحة لصناعة اللقطات السينمائية من صورك", color = Color.White, fontSize = 14.sp)
-                        Text("واجهة عربية • حفظ مشروعات محلي • أدوات حركة", color = muted, fontSize = 11.sp)
+                if (page == "الرئيسية") {
+                    item {
+                        Row(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF492536), Color(0xFF1C1A22))), RoundedCornerShape(18.dp)).padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text("استوديو وليد الديب", color = gold, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                                Text("حوّل أفكارك إلى مشاهد", color = Color.White, fontSize = 12.sp)
+                            }
+                            Text("⚡ محلي", color = gold, fontWeight = FontWeight.Bold)
+                        }
                     }
+                    item { HomeSection("ابدأ الإنشاء", listOf("صورة إلى فيديو", "نص إلى فيديو", "تمديد فيديو", "قوالب مؤثرة")) { label ->
+                        activeTool = label
+                        page = "إنشاء"
+                        if (label != "صورة إلى فيديو") notice = "الأداة دي ضمن الواجهة، ومحرك التوليد الخاص بها لم يتم ربطه بعد."
+                    } }
+                    item { HomeSection("الرائج", listOf("لقطة سينمائية", "حركة بطيئة", "تحول درامي", "مشهد خيالي")) { label -> prompt = "أنشئ مشهدًا سينمائيًا بأسلوب ${label}، حركة طبيعية وإضاءة احترافية"; activeTool = "صورة إلى فيديو"; page = "إنشاء" } }
+                    item { HomeSection("جديد", listOf("إضاءة سينمائية", "عالم مصغر", "ستايل أنمي", "بورتريه فني")) { label -> prompt = "حوّل الصورة إلى ${label} بتفاصيل عالية"; activeTool = "صورة إلى فيديو"; page = "إنشاء" } }
+                    item { HomeSection("تحويل الصور", listOf("تغيير الستايل", "تغيير الخلفية", "ترميم الصورة", "تحسين الجودة")) { label -> notice = "${label} يحتاج محرك معالجة صور قبل تفعيله."; page = "إنشاء"; createMode = "صورة" } }
+                    item { HomeSection("الصوت والشخصيات", listOf("تحريك الشفاه", "مزامنة الصوت", "مؤثرات صوتية", "شخصية ثابتة")) { label -> notice = "${label} يحتاج محرك ذكاء اصطناعي متخصصًا قبل تفعيله."; page = "إنشاء" } }
+                } else if (page == "حسابي") {
+                    item { Text("حسابي", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold) }
+                    item { Note("وليد الديب", "استوديو صناعة الفيديو والصور على هذا الهاتف.") }
+                    item { Note("المكتبة", "${projects.size} مشروعات محفوظة • ${exports.size} فيديوهات مصدّرة") }
+                    item { Note("وضع التشغيل", "إنشاء الفيديو الحالي يتم محليًا من صورة ثابتة. التوليد بالذكاء الاصطناعي يحتاج ربط خدمة أو نموذج مستقل.") }
+                    item { Button(onClick = { page = "إنشاء" }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = wine)) { Text("فتح الاستوديو") } }
                 }
-                if (page == "فيديوهاتي") {
+                if (page == "فيديوهاتي" || page == "الأصول") {
                     item { Text("الفيديوهات المحفوظة", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold) }
                     if (exports.isEmpty()) item { Note("لا توجد فيديوهات مصدّرة", "بعد إنشاء فيديو MP4 سيظهر هنا لتشغيله أو مشاركته.") }
                     itemsIndexed(exports) { index, video ->
@@ -158,7 +179,17 @@ private fun Studio(context: Context) {
                         }
                     }
                 } else {
-                    item { Text(if (page == "إنشاء") "محرر المشروع" else "ابدأ مشروعك", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold) }
+                    item { Text("إنشاء", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold) }
+                    item {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            listOf("فيديو", "صورة", "قوالب", "وكيل").forEach { mode ->
+                                FilterChip(selected = createMode == mode, onClick = {
+                                    createMode = mode
+                                    if (mode != "فيديو") notice = "قسم $mode ظاهر في الواجهة، وسيتم تفعيله عند إضافة محركه."
+                                }, label = { Text(mode, fontSize = 11.sp) })
+                            }
+                        }
+                    }
                     item {
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             ToolTile("صورة إلى فيديو", "تحريك صورة ثابتة", "▶", true) { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
@@ -169,6 +200,7 @@ private fun Studio(context: Context) {
                         Column(Modifier.fillMaxWidth().background(panel, RoundedCornerShape(18.dp)).padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             Text("اسم المشروع", color = gold, fontWeight = FontWeight.Bold)
                             OutlinedTextField(value = projectName, onValueChange = { projectName = it.take(40) }, modifier = Modifier.fillMaxWidth(), singleLine = true, placeholder = { Text("اكتب اسمًا لمشروعك") })
+                            Text("أداة الإنشاء: $activeTool", color = gold, fontWeight = FontWeight.Bold)
                             Text("الصورة المصدر", color = gold, fontWeight = FontWeight.Bold)
                             if (image != null) AsyncImage(model = image, contentDescription = "الصورة المختارة", modifier = Modifier.fillMaxWidth().heightIn(max = 250.dp).background(bg, RoundedCornerShape(12.dp)))
                             else Box(Modifier.fillMaxWidth().height(120.dp).background(bg, RoundedCornerShape(12.dp)).clickable { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, contentAlignment = Alignment.Center) { Text("＋  اختر صورة من هاتفك", color = gold) }
@@ -248,6 +280,27 @@ private fun Studio(context: Context) {
 }
 
 @Composable
+@Composable
+private fun HomeSection(title: String, labels: List<String>, onSelect: (String) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text(title, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            Text("عرض الكل", color = gold, fontSize = 11.sp)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            labels.forEachIndexed { index, label ->
+                Column(Modifier.weight(1f).height(112.dp).background(Brush.linearGradient(listOf(
+                    listOf(Color(0xFF533044), Color(0xFF263344), Color(0xFF394333), Color(0xFF403047))[index],
+                    panel
+                )), RoundedCornerShape(14.dp)).clickable { onSelect(label) }.padding(9.dp), verticalArrangement = Arrangement.Bottom) {
+                    Text(listOf("✦", "◈", "✧", "❖")[index], color = gold, fontSize = 21.sp)
+                    Text(label, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, maxLines = 2)
+                }
+            }
+        }
+    }
+}
+
 private fun ToolTile(title: String, subtitle: String, icon: String, active: Boolean, onClick: () -> Unit) {
     Column(Modifier.fillMaxWidth(0.48f).background(panel, RoundedCornerShape(16.dp)).border(1.dp, if (active) gold.copy(alpha = .4f) else muted.copy(alpha = .15f), RoundedCornerShape(16.dp)).clickable(enabled = active, onClick = onClick).padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(icon, color = gold, fontSize = 24.sp)
