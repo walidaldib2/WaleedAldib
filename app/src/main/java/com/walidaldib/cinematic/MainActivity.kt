@@ -45,7 +45,7 @@ private val gold = Color(0xFFD6B36A)
 private val wine = Color(0xFF7D263D)
 private val muted = Color(0xFFAAA7A0)
 
-private data class SavedProject(val name: String, val image: String, val prompt: String, val movement: String, val length: Int)
+private data class SavedProject(val name: String, val image: String, val prompt: String, val movement: String, val length: Int, val aspect: String = "عمودي 9:16")
 
 @Composable
 private fun Studio(context: Context) {
@@ -54,7 +54,7 @@ private fun Studio(context: Context) {
     var image by remember { mutableStateOf(prefs.getString("last_image", null)?.let(Uri::parse)) }
     var prompt by remember { mutableStateOf(prefs.getString("prompt", "") ?: "") }
     var movement by remember { mutableStateOf(prefs.getString("movement", "تقريب سينمائي") ?: "تقريب سينمائي") }
-    var length by remember { mutableIntStateOf(prefs.getInt("length", 5)) }
+    var length by remember { mutableIntStateOf(prefs.getInt("length", 5)) }\n    var aspect by remember { mutableStateOf(prefs.getString("aspect", "عمودي 9:16") ?: "عمودي 9:16") }
     var notice by remember { mutableStateOf("الاستوديو جاهز. اختر صورة للبدء.") }
     var projects by remember { mutableStateOf(readProjects(prefs)) }
     var deleteIndex by remember { mutableStateOf<Int?>(null) }
@@ -120,7 +120,7 @@ private fun Studio(context: Context) {
                     if (projects.isEmpty()) item { Note("لا توجد مشروعات محفوظة", "ابدأ من صفحة إنشاء واحفظ إعدادات أول مشروع.") }
                     itemsIndexed(projects) { index, p ->
                         Row(Modifier.fillMaxWidth().background(panel, RoundedCornerShape(16.dp)).clickable {
-                            image = Uri.parse(p.image); prompt = p.prompt; movement = p.movement; length = p.length; page = "إنشاء"
+                            image = Uri.parse(p.image); prompt = p.prompt; movement = p.movement; length = p.length; aspect = p.aspect; page = "إنشاء"
                         }.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                             AsyncImage(model = Uri.parse(p.image), contentDescription = null, modifier = Modifier.size(66.dp).background(bg, RoundedCornerShape(10.dp)))
                             Spacer(Modifier.width(12.dp))
@@ -154,17 +154,17 @@ private fun Studio(context: Context) {
                                     Text(choice, color = Color.White)
                                 }
                             }
-                            Text("مدة اللقطة", color = gold, fontWeight = FontWeight.Bold)
+                            Text("أبعاد الفيديو", color = gold, fontWeight = FontWeight.Bold)\n                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {\n                                listOf("عمودي 9:16", "مربع 1:1", "أفقي 16:9").forEach { ratio ->\n                                    FilterChip(selected = aspect == ratio, onClick = { aspect = ratio }, label = { Text(ratio, fontSize = 11.sp) })\n                                }\n                            }\n                            Text("مدة اللقطة", color = gold, fontWeight = FontWeight.Bold)
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 listOf(5, 8, 10).forEach { n -> FilterChip(selected = length == n, onClick = { length = n }, label = { Text("$n ثوانٍ") }) }
                             }
                             Button(onClick = {
                                 if (image == null) notice = "اختَر صورة أولًا."
                                 else {
-                                    val updated = projects + SavedProject("مشروع " + (projects.size + 1), image.toString(), prompt, movement, length)
+                                    val updated = projects + SavedProject("مشروع " + (projects.size + 1), image.toString(), prompt, movement, length, aspect)
                                     projects = updated
                                     writeProjects(prefs, updated)
-                                    prefs.edit().putString("prompt", prompt).putString("movement", movement).putInt("length", length).apply()
+                                    prefs.edit().putString("prompt", prompt).putString("movement", movement).putInt("length", length).putString("aspect", aspect).apply()
                                     notice = "تم حفظ المشروع وإعداداته على هذا الهاتف."
                                 }
                             }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = gold, contentColor = bg)) { Text("حفظ المشروع", fontWeight = FontWeight.Bold) }
@@ -178,7 +178,7 @@ private fun Studio(context: Context) {
                                         scope.launch {
                                             try {
                                                 val saved = withContext(Dispatchers.IO) {
-                                                    LocalVideoExporter.export(context, source, length, movement)
+                                                    LocalVideoExporter.export(context, source, length, movement, aspect)
                                                 }
                                                 notice = "تم حفظ الفيديو في المعرض: Movies/WaleedAldib"
                                             } catch (e: Exception) {
@@ -227,7 +227,7 @@ private fun readProjects(prefs: android.content.SharedPreferences): List<SavedPr
     val a = runCatching { JSONArray(prefs.getString("projects", "[]")) }.getOrNull() ?: JSONArray()
     return (0 until a.length()).mapNotNull { i -> runCatching {
         val o = a.getJSONObject(i)
-        SavedProject(o.getString("name"), o.getString("image"), o.optString("prompt"), o.optString("movement"), o.optInt("length", 5))
+        SavedProject(o.getString("name"), o.getString("image"), o.optString("prompt"), o.optString("movement"), o.optInt("length", 5), o.optString("aspect", "عمودي 9:16"))
     }.getOrNull() }
 }
 
