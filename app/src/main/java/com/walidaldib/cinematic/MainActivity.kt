@@ -289,7 +289,7 @@ private fun Studio(context: Context) {
                                         }
                                     }
                                 },
-                                enabled = !exporting,
+                                enabled = !exporting && activeTool == "صورة إلى فيديو",
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = ButtonDefaults.buttonColors(containerColor = wine)
                             ) {
