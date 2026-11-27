@@ -23,11 +23,14 @@ import java.util.Date
 import java.util.Locale
 
 object LocalVideoExporter {
-    private const val WIDTH = 720
-    private const val HEIGHT = 1280
     private const val FPS = 24
 
-    fun export(context: Context, source: Uri, seconds: Int, movement: String): Uri {
+    fun export(context: Context, source: Uri, seconds: Int, movement: String, aspectRatio: String): Uri {
+        val (width, height) = when (aspectRatio) {
+            "مربع 1:1" -> 720 to 720
+            "أفقي 16:9" -> 1280 to 720
+            else -> 720 to 1280
+        }
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         context.contentResolver.openInputStream(source)?.use { BitmapFactory.decodeStream(it, null, bounds) }
         var sample = 1
