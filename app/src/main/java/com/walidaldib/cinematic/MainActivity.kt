@@ -148,19 +148,83 @@ private fun Studio(context: Context) {
                             Text("⚡ محلي", color = gold, fontWeight = FontWeight.Bold)
                         }
                     }
-                    item { HomeSection("ابدأ الإنشاء", listOf("صورة إلى فيديو", "نص إلى فيديو", "قوالب", "مشاريعي")) { label ->
-                        when (label) {
-                            "صورة إلى فيديو" -> { activeTool = label; page = "إنشاء"; picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
-                            "نص إلى فيديو" -> { activeTool = label; page = "إنشاء"; notice = "توليد الفيديو من النص يحتاج ربط محرك ذكاء اصطناعي." }
-                            "قوالب" -> { activeTool = "قوالب"; page = "إنشاء"; createMode = "قوالب"; notice = "القوالب الجاهزة ستظهر هنا عند إضافة محتواها." }
-                            else -> page = "مشاريعي"
+                    item {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Text("ابدأ إبداعك", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                                Column(Modifier.weight(1f).height(118.dp).background(Brush.linearGradient(listOf(Color(0xFF58304D), Color(0xFF241B2B))), RoundedCornerShape(16.dp)).clickable {
+                                    activeTool = "صورة إلى فيديو"; page = "إنشاء"; picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                }.padding(12.dp), verticalArrangement = Arrangement.Bottom) {
+                                    Text("▣", color = gold, fontSize = 25.sp)
+                                    Text("صورة إلى فيديو", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                }
+                                Column(Modifier.weight(1f).height(118.dp).background(Brush.linearGradient(listOf(Color(0xFF263B4A), Color(0xFF171D28))), RoundedCornerShape(16.dp)).clickable {
+                                    activeTool = "نص إلى فيديو"; page = "إنشاء"; notice = "توليد الفيديو من النص يحتاج ربط محرك ذكاء اصطناعي."
+                                }.padding(12.dp), verticalArrangement = Arrangement.Bottom) {
+                                    Text("✎", color = gold, fontSize = 25.sp)
+                                    Text("نص إلى فيديو", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                }
+                                Column(Modifier.weight(1f).height(118.dp).background(Brush.linearGradient(listOf(Color(0xFF3C354F), Color(0xFF1B1A27))), RoundedCornerShape(16.dp)).clickable {
+                                    activeTool = "قوالب"; page = "إنشاء"; createMode = "قوالب"; notice = "القوالب ستظهر هنا عند إضافة مكتبتها."
+                                }.padding(12.dp), verticalArrangement = Arrangement.Bottom) {
+                                    Text("✧", color = gold, fontSize = 25.sp)
+                                    Text("القوالب", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                }
+                            }
                         }
-                    } }
-                    item { HomeSection("أدوات إبداعية", listOf("تحرير الصور", "الحركة والمؤثرات", "الصوت والشخصيات", "التحولات")) { label ->
-                        activeTool = label
-                        page = "إنشاء"
-                        notice = "الأداة دي تحتاج محركها المتخصص قبل تفعيلها."
-                    } }
+                    }
+                    item {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Text("اكتشف الإبداع", color = Color.White, fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                            Text("عرض الكل", color = gold, fontSize = 11.sp, modifier = Modifier.clickable { page = "إنشاء" })
+                        }
+                    }
+                    item {
+                        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf("الرائج", "جديد", "التحولات", "الحركة", "الصوت", "الشخصيات").forEachIndexed { index, label ->
+                                FilterChip(selected = index == 0, onClick = {
+                                    activeTool = when (label) {
+                                        "الصوت" -> "الصوت والشخصيات"
+                                        "الشخصيات" -> "الشخصيات"
+                                        "الحركة" -> "الحركة والمؤثرات"
+                                        "التحولات" -> "التحولات"
+                                        else -> "قوالب"
+                                    }
+                                    page = "إنشاء"
+                                    notice = "قسم $label يحتاج إضافة مكتبته ومحركه قبل عرض محتوى فعلي."
+                                }, label = { Text(label, fontSize = 12.sp) })
+                            }
+                        }
+                    }
+                    item {
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                ToolTile("تحويل الصور", "صورة إلى فيديو", "▧", true) {
+                                    activeTool = "صورة إلى فيديو"; page = "إنشاء"; picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                }
+                                ToolTile("تأثيرات الفيديو", "حركة وانتقالات", "✦", false) {
+                                    activeTool = "الحركة والمؤثرات"; page = "إنشاء"; notice = "مكتبة التأثيرات ستضاف لاحقًا."
+                                }
+                            }
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                ToolTile("تحرير الصور", "تحسين وتعديل", "◈", false) {
+                                    activeTool = "تحرير الصور"; page = "إنشاء"; notice = "أدوات تحرير الصور تحتاج محركها المتخصص."
+                                }
+                                ToolTile("الصوت والشخصيات", "مزامنة صوت وحركة", "♫", false) {
+                                    activeTool = "الصوت والشخصيات"; page = "إنشاء"; notice = "أدوات الصوت والشخصيات تحتاج محركها المتخصص."
+                                }
+                            }
+                        }
+                    }
+                    item {
+                        Row(Modifier.fillMaxWidth().background(panel, RoundedCornerShape(14.dp)).clickable { page = "مشاريعي" }.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                Text("مشاريعك وإبداعاتك", color = Color.White, fontWeight = FontWeight.Bold)
+                                Text("${projects.size} مشروع محفوظ على جهازك", color = muted, fontSize = 11.sp)
+                            }
+                            Text("›", color = gold, fontSize = 24.sp)
+                        }
+                    }
                 } else if (page == "حسابي") {
                     item { Text("حسابي", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold) }
                     item { Note("وليد الديب", "استوديو صناعة الفيديو والصور على هذا الهاتف.") }
