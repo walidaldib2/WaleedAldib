@@ -58,7 +58,7 @@ object LocalVideoExporter {
             val configAttrs = intArrayOf(
                 EGL14.EGL_RED_SIZE, 8, EGL14.EGL_GREEN_SIZE, 8, EGL14.EGL_BLUE_SIZE, 8,
                 EGL14.EGL_ALPHA_SIZE, 8, EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
-                EGL14.EGL_NONE
+                0x3142, 1, EGL14.EGL_NONE
             )
             val configs = arrayOfNulls<android.opengl.EGLConfig>(1)
             val count = IntArray(1)
@@ -112,19 +112,19 @@ object LocalVideoExporter {
                         }
                         index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
                             check(!muxerStarted) { "تغير تنسيق الفيديو مرتين" }
-                            track = muxer!!.addTrack(codec.outputFormat)
+                            track = muxer!!.addTrack(codec!!.outputFormat)
                             muxer.start()
                             muxerStarted = true
                         }
                         index >= 0 -> {
-                            val buffer = codec.getOutputBuffer(index)
+                            val buffer = codec!!.getOutputBuffer(index)
                             if (buffer != null && info.size > 0 && muxerStarted && info.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG == 0) {
                                 buffer.position(info.offset)
                                 buffer.limit(info.offset + info.size)
                                 muxer!!.writeSampleData(track, buffer, info)
                             }
                             if (info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) finished = true
-                            codec.releaseOutputBuffer(index, false)
+                            codec!!.releaseOutputBuffer(index, false)
                         }
                     }
                 }
@@ -147,7 +147,7 @@ object LocalVideoExporter {
                 check(EGL14.eglSwapBuffers(eglDisplay, eglSurface)) { "تعذر تسجيل إطار الفيديو" }
                 drain(false)
             }
-            codec.signalEndOfInputStream()
+            codec!!.signalEndOfInputStream()
             drain(true)
             check(muxerStarted) { "لم يتم إنشاء مسار الفيديو" }
         } finally {
